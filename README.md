@@ -26,4 +26,4 @@ Add the package folder pyDR to the python path
 See scripts in examples folder
 
 ### Data:
-To run the scripts in the examples folder you will need to download and extract the following [csv file](https://www.ocf.berkeley.edu/~balandat/pyDR_data.zip) (~25MB)
+To run the scripts in the examples folder you will need to download and extract the following [zip file](https://www.ocf.berkeley.edu/~balandat/pyDR_data.zip) (~25MB)
