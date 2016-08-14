@@ -1,5 +1,5 @@
 """
-Functions for running a large nubmer of simulations.
+Functions for running a large number of simulations.
 
 @author: Maximilian Balandat
 @date Aug 13, 2016
@@ -21,7 +21,7 @@ from .utils import (net_benefits_test, meter_charges, non_gen_tariffs,
 
 def get_occupancy(index):
     """
-        Funciton returning the occupancy of the building in the HVAC model
+        Function returning the occupancy of the building in the HVAC model
         based on the values used in:
         R. Gondhalekar, F. Oldewurtel, and C. N. Jones. Least-restrictive
         robust periodic model predictive control applied to room temperature
@@ -38,7 +38,7 @@ def get_occupancy(index):
 
 def get_comfort_constraints(index):
     """
-        Funciton returning the comfort constraints for the HVAC model.
+        Function returning the comfort constraints for the HVAC model.
     """
     idx = index.tz_convert('US/Pacific')
     isWorkHour = (idx.hour >= 8) & (idx.hour < 20)
