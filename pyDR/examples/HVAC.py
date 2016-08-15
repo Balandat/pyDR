@@ -16,7 +16,7 @@ import logging
 import logutils.queue
 import logging.config
 from datetime import datetime
-from .simulate import get_occupancy, log_config, simulate_HVAC, max_cool
+from .simulation import get_occupancy, log_config, simulate_HVAC, max_cool
 
 
 ############################################################################

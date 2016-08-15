@@ -16,7 +16,7 @@ import logging
 import logutils.queue
 import logging.config
 from datetime import datetime
-from .simulate import log_config, simulate_QU
+from .simulation import log_config, simulate_QU
 
 
 ############################################################################
