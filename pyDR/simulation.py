@@ -25,8 +25,8 @@ def get_occupancy(index):
         based on the values used in:
         R. Gondhalekar, F. Oldewurtel, and C. N. Jones. Least-restrictive
         robust periodic model predictive control applied to room temperature
-        regulation. Automatica, 49(9):2760 – 2766, 2013.
-        We also add additional 'occupancy' by appliances and devices in the
+        regulation. Automatica, 49(9):2760 - 2766, 2013.
+        We also add additional "occupancy" by appliances and devices in the
         non-work hours.
     """
     idx = index.tz_convert('US/Pacific')
