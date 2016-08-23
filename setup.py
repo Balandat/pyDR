@@ -17,7 +17,7 @@ data_files = [(root, [os.path.join(root, f) for f in files])
 
 setup(
     name='pyDR',
-    version='0.1a',
+    version='0.1.1',
     packages=['pyDR'],
     install_requires=reqs,
     data_files=data_files,
