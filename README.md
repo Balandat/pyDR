@@ -3,15 +3,17 @@ Authors: Maximilian Balandat, Clay Campaigne, Lillian Ratliff
 
 Python package for simulating behavior and quantifying welfare effects of electricity consumers facing various dynamic pricing schemes.
 This package is the basis for the results reported in:
-C. Campaigne, M. Balandat and L. Ratliff: Welfare Effects of Dynamic Electricity Pricing. In preparation.
 
-### Requirements / Dependencies: 
+*C. Campaigne, M. Balandat and L. Ratliff: Welfare Effects of Dynamic Electricity Pricing. In preparation.*
+
+### Requirements / Dependencies:
 * gurobipy (+ GUROBI with valid license)
-* numpy & scipy
+* numpy
+* scipy
 * pandas
 * pytz
 * patsy
-* logutils (for examples if using python 2.7)
+* logutils (for examples if using python 2)
 
 ### Modules:
 * dynamic_models.py: Definition of basic dynamic consumption models
@@ -19,8 +21,9 @@ C. Campaigne, M. Balandat and L. Ratliff: Welfare Effects of Dynamic Electricity
 * utils.py: Specify tariff data and provide utility functions for other modules
 * simulation.py: Functions for simulating a large number of different scenarios
 
-### Installation:
-Add the package folder pyDR to the python path 
+### Installation (using setuptools):
+* from source: `python setup.py install`
+* from pypi: `pip install pyDR`
 
 ### Usage:
 See scripts in examples folder
