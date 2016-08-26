@@ -12,9 +12,10 @@ reqs += ['logutils>=0.3.3']
 
 setup(
     name='pyDR',
-    version='0.1.1',
+    version='0.1.1c',
     packages=['pyDR'],
     install_requires=reqs,
+    include_package_data=True,
     package_data={'pyDR': ['data/*.csv']},
     author='Maximilian Balandat',
     author_email='balandat@eecss.berkeley.edu',

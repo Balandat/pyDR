@@ -1,0 +1,2 @@
+# data files (incl. CAISO NBT)
+include pyDR/data *.csv
