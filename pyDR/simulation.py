@@ -16,7 +16,7 @@ import logutils.queue
 from pyDR.dynamic_models import FraukesModel, QuadraticUtilityWithBattery
 from .blopt import BLModel, compute_BLtaking_eq
 from .utils import (net_benefits_test, meter_charges, non_gen_tariffs,
-                    pdp_compatible, get_energy_charges)
+                    pdp_compatible, get_energy_charges, create_folder)
 
 
 def get_occupancy(index):
@@ -126,8 +126,10 @@ def simulate_HVAC(i, log_queue, result_queue, data, nodes, tariffs, n_DR=[],
             data.index[0].date(), data.index[-1].date()))
     blmodel = BLModel('bdg_model')
     blmodel._model.setParam('LogToConsole', 0)  # supress gurobi cosole output
-    if 'GRB_logfile' in kwargs:
-        blmodel._model.setParam('LogFile', kwargs['GRB_logfile'])
+    GRB_log = kwargs.get('GRB_logfile')
+    if GRB_log is not None:
+        create_folder(GRB_log)
+        blmodel._model.setParam('LogFile', GRB_log)
     else:
         blmodel._model.setParam('LogFile', '')
     if 'MIPGap' in kwargs:
@@ -374,6 +376,7 @@ def simulate_QU(i, log_queue, result_queue, data, etas, nodes, tariffs, xlims,
     blmodel._model.setParam('LogToConsole', 0)  # supress gurobi cosole output
     GRB_log = kwargs.get('GRB_logfile')
     if GRB_log is not None:
+        create_folder(GRB_log)
         blmodel._model.setParam('LogFile', GRB_log)
     else:
         blmodel._model.setParam('LogFile', '')

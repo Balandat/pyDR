@@ -23,6 +23,19 @@ carbon_costs = {2012: 16.60, 2013: 11.62, 2014: 11.62}
 # carbon_costs = {'2012': 15.77, '2013': 10.79, '2014': 10.79}
 
 
+def create_folder(filename):
+    """
+        Helper function for safely creating all sub-directories
+        for a specific file in python2
+    """
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+
 def matrices_frauke(ts=15):
     """
         Return matrices A, B, and E of the discrete-time dynamical system model
