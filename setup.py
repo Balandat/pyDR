@@ -12,7 +12,7 @@ reqs += ['logutils>=0.3.3']
 
 setup(
     name='pyDR',
-    version='0.1.1c',
+    version='0.1.2',
     packages=['pyDR'],
     install_requires=reqs,
     include_package_data=True,
