@@ -2,7 +2,7 @@
 Same basic parameters for the Baselining work.
 
 @author: Maximilian Balandat, Lillian Ratliff
-@date Apr 9, 2016
+@date Aug 30, 2016
 """
 
 import numpy as np
@@ -265,7 +265,12 @@ def _PGE_tariff_data():
                                                    'PartialPeak': 0.02627,
                                                    'OffPeak':     0.02627},
                                         'Winter': {'PartialPeak': 0.02627,
-                                                   'OffPeak':     0.02627}}}
+                                                   'OffPeak':     0.02627}},
+           'OptFlat_non-gen':          {'Summer': {'Peak':        0.0,
+                                                   'PartialPeak': 0.0,
+                                                   'OffPeak':     0.0},
+                                        'Winter': {'PartialPeak': 0.0,
+                                                   'OffPeak':     0.0}}}
     dem = {'A10_primary':               {'Summer': 15.22, 'Winter': 8.20},
            'A10_secondary':             {'Summer': 16.23, 'Winter': 8.00},
            'A10_secondary_non-gen':     {'Summer': 11.89, 'Winter': 8.00},
@@ -296,7 +301,9 @@ def _PGE_tariff_data():
                                                     'max': 15.07}}
            }  # All data here from the March 2015 rate change,
     # to accomodate non-gen rates, based on March 2015 tariffs, from
-    # http://www.pge.com/includes/docs/pdfs/mybusiness/customerservice/energychoice/communitychoiceaggregation/faq/business_non_generation_rates.pdf.
+    # http://www.pge.com/includes/docs/pdfs/mybusiness/customerservice/
+    # energychoice/communitychoiceaggregation/faq/
+    # business_non_generation_rates.pdf.
     meter = {'A1':    0.65708,
              'A1TOU': 0.65708,
              'A6TOU': 0.65708 + 0.20107,
@@ -586,8 +593,11 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
             else:
                 tar = nrg_charges[tariff + '_non-gen']
     else:
-        if 'OptFlat' in tariff:
-            optflat = LMP.mean() / 1000.0
+        if 'OptFlat' in tariff:  # want to do Opt Flat LMPmG
+            if 'non-gen' in tariff:
+                optflat = 0.0
+            else:
+                optflat = LMP.mean() / 1000.0
             tar = {'Summer': {'Peak':        optflat,
                               'PartialPeak': optflat,
                               'OffPeak':     optflat},
@@ -656,6 +666,8 @@ def get_DR_rewards(LMP, isLMPmG=False, tariff=None):
     elif tariff not in non_gen_tariffs:
         raise Exception('Tariff {} is not '.format(tariff) +
                         'compatible with LMP-G DR compensation.')
+    elif 'OptFlat' in tariff:
+        return LMP - LMP.mean()
     else:
         rtp_chrgs = get_energy_charges(
             LMP.index, tariff, isRT=True, LMP=LMP)['EnergyCharge']
@@ -726,7 +738,7 @@ nrg_charges, dem_charges, meter_charges = _PGE_tariff_data()
 pdpkwh_credit, pdpdem_credit, pdpchg_chrg = _pdp_credits()
 # define tariffs that are compatible with RTP
 non_gen_tariffs = ['A1', 'A1TOU', 'A6TOU', 'A10_secondary', 'A10TOU_secondary',
-                   'E19TOU_secondary']
+                   'E19TOU_secondary', 'OptFlatA1', 'OptFlatA6TOU', 'OptFlat']
 pdp_compatible = ['A1TOU', 'A6TOU',
                   'A10TOU_secondary', 'A10TOU_primary', 'A10TOU_transmission',
                   'E19TOU_secondary', 'E19TOU_primary', 'E19TOU_transmission']
