@@ -181,7 +181,7 @@ def _parse_pdp_days():
     """ Parses data file for PDP peak days """
     pdpd_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'data', 'PDP_days.csv')
-    pdpd = pd.Datetimeindex(
+    pdpd = pd.DatetimeIndex(
         pd.read_csv(pdpd_file, parse_dates=[0]).iloc[:, 0])
     return pdpd
 
