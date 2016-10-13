@@ -95,7 +95,7 @@ for (start_date, end_date) in sim_ranges:
                                 (data_scaled.index <= ts_end)])
 
 # configure logger
-logging.config.dictConfig(log_config)
+logging.config.dictConfig(log_config(log_file))
 log_queue = mp.Queue(-1)
 root = logging.getLogger()
 ql = logutils.queue.QueueListener(log_queue, *root.handlers)
