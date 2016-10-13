@@ -668,7 +668,7 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
         cidx = chronRates.index
         pdpind = ((cidx.hour >= 12) & (cidx.hour < 18) &
                   (cidx.normalize().isin(pdp_days)))
-        chronRates.loc[pdpind, 'EnergyCharge'] = pdpchrg
+        chronRates.loc[pdpind, 'EnergyCharge'] += pdpchrg
     chronRates = chronRates.tz_convert('GMT')
     if isRT:
         chronRates['EnergyCharge'] += LMP.loc[index[0]:index[-1]] / 1000.0
