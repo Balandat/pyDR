@@ -177,6 +177,15 @@ def _parse_nbt_data():
     return nbt
 
 
+def _parse_pdp_days():
+    """ Parses data file for PDP peak days """
+    pdpd_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'data', 'PDP_days.csv')
+    pdpd = pd.Datetimeindex(
+        pd.read_csv(pdpd_file, parse_dates=[0]).iloc[:, 0])
+    return pdpd
+
+
 def _PGE_tariff_data():
     """
         Prepares data for PGE tariffs.
@@ -618,6 +627,7 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
                               'OffPeak':     optflat}}
         else:
             tar = nrg_charges[tariff]
+            pdpchrg = pdp_charges[tariff]
     if isPDP:
         if tariff not in pdp_compatible:
             raise Exception('Tariff {} not '.format(tariff) +
@@ -653,7 +663,13 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
                        [idx[ispartial_winter], idx[isoff_winter]]):
         dfs.append(pd.DataFrame({'EnergyCharge': [tar['Winter'][time]]*len(i)},
                                 index=i))
-    chronRates = pd.concat(dfs, axis=0).sort_index().tz_convert('GMT')
+    chronRates = pd.concat(dfs, axis=0).sort_index()
+    if isPDP:
+        cidx = chronRates.index
+        pdpind = ((cidx.hour >= 12) & (cidx.hour < 18) &
+                  (cidx.normalize().isin(pdp_days)))
+        chronRates.loc[pdpind, 'EnergyCharge'] = pdpchrg
+    chronRates = chronRates.tz_convert('GMT')
     if isRT:
         chronRates['EnergyCharge'] += LMP.loc[index[0]:index[-1]] / 1000.0
     if carbon:
@@ -749,6 +765,11 @@ nbt = _parse_nbt_data()
 # define PGE tariff data
 nrg_charges, dem_charges, meter_charges = _PGE_tariff_data()
 pdpkwh_credit, pdpdem_credit, pdpchg_chrg = _pdp_credits()
+pdp_days = _parse_pdp_days()
+pdp_charges = {'A1TOU': 0.60, 'A6TOU': 1.20, 'A10TOU_secondary': 0.90,
+               'A10TOU_primary': 0.90, 'A10TOU_transmission': 0.90,
+               'E19TOU_secondary': 1.20, 'E19TOU_primary': 1.20,
+               'E19TOU_transmission': 1.20}
 # define tariffs that are compatible with RTP
 non_gen_tariffs = ['A1', 'A1TOU', 'A6TOU', 'A10_secondary', 'A10TOU_secondary',
                    'E19TOU_secondary', 'OptFlatA1', 'OptFlatA6TOU', 'OptFlat']
