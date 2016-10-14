@@ -627,13 +627,13 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
                               'OffPeak':     optflat}}
         else:
             tar = nrg_charges[tariff]
-            pdpchrg = pdp_charges[tariff]
     if isPDP:
         if tariff not in pdp_compatible:
             raise Exception('Tariff {} not '.format(tariff) +
                             'compatible with PDP.')
         else:
             pdpcr = pdpkwh_credit[tariff]
+            pdpchrg = pdp_charges[tariff]
     idx = index.tz_convert('US/Pacific')
     iswknd = idx.dayofweek > 5
     holidays = USFederalHolidayCalendar().holidays(idx.min(), idx.max())
@@ -667,7 +667,7 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
     if isPDP:
         cidx = chronRates.index
         pdpind = ((cidx.hour >= 12) & (cidx.hour < 18) &
-                  (cidx.normalize().isin(pdp_days)))
+                  (cidx.normalize().isin(pdp_days.tz_localize('US/Pacific'))))
         chronRates.loc[pdpind, 'EnergyCharge'] += pdpchrg
     chronRates = chronRates.tz_convert('GMT')
     if isRT:
