@@ -435,7 +435,7 @@ class BLModel(object):
                         continue
                     if sim in self._dr_periods:
                         sim_DR += [sim]
-                        if len(grouped[sim.date()]) > 1:
+                        if len(grouped[pd.Timestamp(sim.date())]) > 1:
                             sim_DR_mult += [sim]
                     else:
                         sim_nonDR += [sim]
