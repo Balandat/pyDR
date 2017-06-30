@@ -354,6 +354,32 @@ class FraukesModel(LinearSystem):
         self.populate_model(self, v=v)
 
 
+class PavlaksModel(LinearSystem):
+    """
+        The linear model
+    """
+
+    def __init__(self, model, ts=15):
+        """
+            Create an instance of Pavlak's Model with sampling time
+            ts (in minutes)
+        """
+        from .utils import matrices_pavlak
+        A, B, E = matrices_pavlak(ts)
+        super(PavlaksModel, self).__init__(model, A, B, E=E)
+
+    def set_v(self, df):
+        """
+            Set model data (outside temperature, solar radiation, occupancy).
+            Here df is a pandas dataframe indexed by a (timezonez-aware)
+            Datetimeindex with columns outside_temp, solar_rad and occupancy
+        """
+        self.v = df
+        v = df[['outside_temp', 'solar_rad', 'occupancy']].values
+        self.set_opts(T=v.shape[0])
+        self.populate_model(self, v=v)
+
+
 class GenericBufferedProduction(LinearSystem):
     """
         A linear model for a generic buffered production model. Here it is

@@ -60,6 +60,33 @@ def matrices_frauke(ts=15):
     (A, B, C, D, dt) = cont2discrete((Act, Bct, Cct, Dct), ts*60, method='zoh')
     (A, E, C, D, dt) = cont2discrete((Act, Ect, Cct, Dct), ts*60, method='zoh')
     return A, B, E
+    
+def matrices_pavlak(ts=15):
+    """
+        Return matrices A, B, and E of the discrete-time dynamical system model
+        of Pavlak's builing model with sampling time ts minutes.
+    """
+    # define matrices for Pavlak's Building model
+    # note: both input variables are assumed to be non-negative!
+    # R's in K/kW and C's in kJ/K				 	
+    R1, R2 = 0.519956063919649, 0.00195669419889427
+    R3, Rw = 0.00544245602566602, 0.156536600054259
+    Cz, Cm = 215552.466637916, 8533970.42635405
+    
+    den = R2*R3 + Rw*R2 + Rw*R3
+    
+    Act = np.array([[Rw*R2/(R3*Cz*den) - 1/(R3*Cz), Rw/(Cz*den)],
+                    [Rw/(Cm*den), -1/(R1*Cm)-1/(R2*Cm)+Rw*R3/(R2*Cm*den)]])
+    Bct = np.array([[1/Cz, -1/Cz],
+                    [0, -0]])
+    Ect = np.array([[R2/(Cz*den), Rw*R2/(Cz*den), 0.43*Rw*R2/(Cz*den)+0.57/Cz],
+                    [R3/(Cm*den)+1/(R1*Cm), Rw*R3/(Cm*den), 0.43*Rw*R3/(Cm*den)]])
+    Cct = np.array([[0, 0, 0]])
+    Dct = np.array([[0, 0]])
+    # convert cont time matrices to discrete time using zoh
+    (A, B, C, D, dt) = cont2discrete((Act, Bct, Cct, Dct), ts*60, method='zoh')
+    (A, E, C, D, dt) = cont2discrete((Act, Ect, Cct, Dct), ts*60, method='zoh')
+    return A, B, E
 
 
 def powerset(iterable):
