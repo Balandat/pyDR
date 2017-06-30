@@ -13,7 +13,7 @@ import logging.config
 # logutils package required as QueueHandler/Listener not available <3.2
 import logutils.queue
 
-from pyDR.dynamic_models import FraukesModel, QuadraticUtilityWithBattery
+from pyDR.dynamic_models import PavlaksModel, QuadraticUtilityWithBattery
 from .blopt import BLModel, compute_BLtaking_eq
 from .utils import (net_benefits_test, meter_charges, non_gen_tariffs,
                     pdp_compatible, get_energy_charges, create_folder)
@@ -162,7 +162,7 @@ def simulate_HVAC(i, log_queue, result_queue, data, nodes, tariffs, n_DR=[],
         blmodel._model.setParam('LogFile', '')
     if 'MIPGap' in kwargs:
         blmodel._model.setParam('MIPGap', kwargs['MIPGap'])
-    blmodel.set_dynsys(FraukesModel(blmodel.get_model(), ts=60))
+    blmodel.set_dynsys(PavlaksModel(blmodel.get_model(), ts=60))
     index = data.index
     # create empty DataFrame to be filled with results
     results = pd.DataFrame()
@@ -178,7 +178,7 @@ def simulate_HVAC(i, log_queue, result_queue, data, nodes, tariffs, n_DR=[],
         xmax, xmin = get_comfort_constraints(index)
         # define constraints and energy coefficients
         umin = np.array([0, 0])
-        umax = np.array([500, kwargs['max_cool'][node]])
+        umax = np.array([370, kwargs['max_cool'][node]])
         blmodel._dynsys.set_opts(
             umin=np.tile(umin, (len(index), 1)),
             umax=np.tile(umax, (len(index), 1)),
@@ -643,5 +643,5 @@ def log_config(logfile):
 
 
 # Define the maximum cooling power (in kW) of the HVAC system
-max_cool = {'PGEB': 150, 'PGP2': 150, 'PGCC': 200, 'PGSA': 300,
-            'SCEW': 250, 'PGF1': 300}
+max_cool = {'PGEB': 790, 'PGP2': 790, 'PGCC': 790, 'PGSA': 790,
+            'SCEW': 790, 'PGF1': 790}
