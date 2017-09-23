@@ -5,7 +5,7 @@ C. Campaigne, M. Balandat and L. Ratliff: Welfare Effects
 of Dynamic Electricity Pricing. In preparation.
 
 @author: Maximilian Balandat
-@date Aug 13, 2016
+@date Sep 23, 2017
 """
 
 # import packages and set up things
@@ -45,10 +45,6 @@ data = pd.read_csv(data_file, parse_dates=['timestamp_GMT'],
                    index_col='timestamp_GMT').tz_localize('GMT')
 data = data.resample('1H').mean()
 
-# scaling factor to appropriately scale solar radiation to building size
-solar_rad_scaling = 60 / data['PGEB_solar'].max()
-
-
 # Define model and simulation parameters
 
 # generate copies of input data for parallelization
@@ -62,9 +58,9 @@ n_DR = [75]
 n_ranges = len(sim_ranges)
 
 # generate scaled sub-DataFrame
-data_scaled = pd.concat(
+data_sim = pd.concat(
     [data[[node+'_temp']] for node in sim_nodes] +
-    [data[[node+'_solar']]*solar_rad_scaling for node in sim_nodes] +
+    [data[[node+'_solar']] for node in sim_nodes] +
     [data[[node+'_LMP']] for node in sim_nodes] +
     [get_internal_gains(data.index)], axis=1)
 # generate a list of DataFrames of different ranges for parallelization
@@ -72,8 +68,9 @@ data_par = []
 for (start_date, end_date) in sim_ranges:
     ts_start = pd.Timestamp(start_date, tz='US/Pacific')
     ts_end = pd.Timestamp(end_date, tz='US/Pacific')
-    data_par.append(data_scaled[(data_scaled.index >= ts_start) &
-                                (data_scaled.index <= ts_end)])
+    data_par.append(
+        data_sim[(data_sim.index >= ts_start) & (data_sim.index <= ts_end)]
+    )
 
 # configure logger
 logging.config.dictConfig(log_config(log_file))

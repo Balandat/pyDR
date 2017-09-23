@@ -321,7 +321,7 @@ class BLModel(object):
             Return compensation for DR, i.e. reductions w.r.t. baseline.
             Here LMP is a pandas Series (indexed by a tz-aware pandas
             Datetimeindex containing all of the object's indices) and
-            dr_hours is a pandas DatetimeIndex.
+            dr_periods is a pandas DatetimeIndex.
         """
         # start by removing all variables (might be inefficient, but o/w it
         # is a pain in the ass do deal with the multihour baselines etc.)
@@ -347,7 +347,7 @@ class BLModel(object):
             Return compensation for DR, i.e. reductions w.r.t. CAISO baseline.
             Here LMP is a pandas Series (indexed by a tz-aware pandas
             Datetimeindex containing all of the object's indices) and
-            dr_hours is a pandas DatetimeIndex. Note that LMP may also be
+            dr_periods is a pandas DatetimeIndex. Note that LMP may also be
             LMP-G, i.e. the LMP minus the generation component of the tariff.
         """
         valid_periods = dr_periods[dr_periods.isin(self._index)].tz_convert(
