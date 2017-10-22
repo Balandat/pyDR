@@ -15,8 +15,8 @@ import logutils.queue
 
 from pyDR.dynamic_models import PavlaksModel, QuadraticUtilityWithBattery
 from .blopt import BLModel, compute_BLtaking_eq
-from .utils import (net_benefits_test, meter_charges, non_gen_tariffs,
-                    pdp_compatible, get_energy_charges, create_folder)
+from .utils import (net_benefits_test, meter_charges, meter_charges_yearly, dem_charges_yearly,
+                    pdpdem_credit_yearly, non_gen_tariffs, pdp_compatible, get_energy_charges, create_folder)
 
 
 def get_occupancy(index):
@@ -34,31 +34,31 @@ def get_occupancy(index):
            60*((idx.hour >= 18) & (idx.hour < 20)) +
            20*((idx.hour >= 20) & (idx.hour < 8)))
     return pd.DataFrame({'occupancy': occ}, index=idx).tz_convert('GMT')
-    
+
 
 def get_internal_gains(index):
     """
-        Function returning the internal heat gains for a six-story, 153000 
-        square foot office building. Includes hourly average kW sensible 
+        Function returning the internal heat gains for a six-story, 153000
+        square foot office building. Includes hourly average kW sensible
         gain from occupants, lighting, and applicances.
-        
+
     """
     idx = index.tz_convert('US/Pacific')
     wdy = [24.76192947, 20.96482158, 19.92731335, 19.92731335, 19.92731335,
            19.92731335, 38.64433293, 63.2454685, 82.73624661, 98.661203,
            100.9794973, 100.9794973, 99.7319698, 99.7319698, 100.9794973,
-           100.9794973, 98.27482062, 93.25184972, 80.1199503, 62.56108407, 
+           100.9794973, 98.27482062, 93.25184972, 80.1199503, 62.56108407,
            43.60058795, 31.38535289, 29.83982339, 27.9079115]
-    sat = [23.18294264, 21.63741313, 21.63741313, 21.63741313, 21.63741313, 
-           21.63741313, 34.86279429, 48.08817545, 50.58323038, 53.0782853, 
-           53.0782853, 53.0782853, 50.58323038, 48.08817545, 48.08817545, 
+    sat = [23.18294264, 21.63741313, 21.63741313, 21.63741313, 21.63741313,
+           21.63741313, 34.86279429, 48.08817545, 50.58323038, 53.0782853,
+           53.0782853, 53.0782853, 50.58323038, 48.08817545, 48.08817545,
            48.08817545, 48.08817545, 46.84064799, 45.59312052, 45.59312052,
            39.79738486, 34.0016492, 31.68335494, 27.04676641]
     sun = [23.18294264, 21.63741313, 21.63741313, 21.63741313, 21.63741313,
            21.63741313, 21.63741313, 21.63741313, 21.63741313, 33.61526683,
            45.59312052, 45.59312052, 45.59312052, 45.59312052, 45.59312052,
-           45.59312052, 45.59312052, 45.59312052, 45.59312052, 45.59312052, 
-           39.79738486, 34.0016492, 31.68335494, 27.04676641]   
+           45.59312052, 45.59312052, 45.59312052, 45.59312052, 45.59312052,
+           39.79738486, 34.0016492, 31.68335494, 27.04676641]
     qg = pd.DataFrame({0: wdy, 1: wdy, 2: wdy, 3: wdy, 4: wdy, 5: sat, 6: sun})
     occ = qg.lookup(idx.hour,idx.weekday)
     return pd.DataFrame({'occupancy': occ}, index=idx).tz_convert('GMT')
@@ -167,6 +167,7 @@ def simulate_HVAC(i, log_queue, result_queue, data, nodes, tariffs, n_DR=[],
     # create empty DataFrame to be filled with results
     results = pd.DataFrame()
     ts_start, ts_end = data.index[0], data.index[-1]
+    year = ts_start.year
     for node in nodes:
         logger.log(logging.INFO, 'Solving for node {}'.format(node))
         # generate disturbance vector v
@@ -191,12 +192,12 @@ def simulate_HVAC(i, log_queue, result_queue, data, nodes, tariffs, n_DR=[],
         # loop through tariffs
         for tariff in tariffs:
             if 'E19' in tariff:
-                meter_per_day = meter_charges[
+                meter_per_day = meter_charges_yearly[year][
                     tariff]['Voluntary']['SmartMeter']
             elif 'Zero' in tariff or 'OptFlat' in tariff:
                 meter_per_day = 0.0
             else:
-                meter_per_day = meter_charges[tariff]
+                meter_per_day = meter_charges_yearly[year][tariff]
             if tariff == 'Zero':
                 logger.log(logging.INFO, 'Solving {} under tariff {}'.format(
                     node, tariff))
@@ -425,6 +426,7 @@ def simulate_QU(i, log_queue, result_queue, data, etas, nodes, tariffs, xlims,
     # define DataFrame to be filled with results
     results = pd.DataFrame()
     ts_start, ts_end = data.index[0], data.index[-1]
+    year = ts_start.year
     for eta in etas:
         for tariff in tariffs:
             # get basic tariff info (for calibration / constraints)
@@ -436,12 +438,12 @@ def simulate_QU(i, log_queue, result_queue, data, etas, nodes, tariffs, xlims,
                 base_tar = tariff
             # deal with meter charges
             if 'E19' in tariff:
-                meter_per_day = meter_charges[
+                meter_per_day = meter_charges_yearly[year][
                     tariff]['Voluntary']['SmartMeter']
             elif 'Zero' in tariff or 'OptFlat' in tariff:
                 meter_per_day = 0.0
             else:
-                meter_per_day = meter_charges[tariff]
+                meter_per_day = meter_charges_yearly[year][tariff]
             for bat_size in xlims.keys():
                 logger.log(logging.INFO, 'Calibrating utility for tariff ' +
                            ' {} under eta={} with bat_size={}'.format(

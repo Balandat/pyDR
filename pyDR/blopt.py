@@ -12,7 +12,7 @@ from gurobipy import GRB, Model, quicksum, LinExpr
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from datetime import datetime
 
-from .utils import (get_energy_charges, get_demand_charge, dem_charges,
+from .utils import (get_energy_charges, get_demand_charge, dem_charges, dem_charges_yearly,
                     get_pdp_demand_credit, get_DR_rewards, powerset, E19,
                     carbon_costs)
 
@@ -61,11 +61,12 @@ class BLModel(object):
             tariff's energy charge) as a gurobipy LinExpr.
         """
         locidx = self._index.tz_convert('US/Pacific')
+        year = locidx[0].year
         if isRT and isPDP:
             raise Exception('Cannot combine RTP and PDP.')
         nrg_charges = get_energy_charges(
             self._index, tariff, isRT=isRT, LMP=LMP,
-            isPDP=isPDP, carbon=carbon)['EnergyCharge']
+            isPDP=isPDP, carbon=carbon, year=year)['EnergyCharge']
         cons = self._dynsys.get_consumption()['energy']
         if twindow is None:
             # echrg_= quicksum([ec * con for ec, con in
@@ -182,7 +183,7 @@ class BLModel(object):
                         # dcharges += (get_demand_charge(tariff, month, isPDP)*
                         #              self._maxcon[year, month])
                         dcharges.append(
-                            (get_demand_charge(tariff, month, isPDP) *
+                            (get_demand_charge(tariff, month, isPDP, year=year) *
                              self._maxcon[year, month]))
                 dcharges = pd.Series(dcharges, index=indx)
                 self._model.update()
@@ -292,13 +293,13 @@ class BLModel(object):
                             rhs=self._maxconppk[year, month],
                             name='maxconppkbnd[{},{},{}]'.format(
                                 year, month, i))
-                        demchrg = get_demand_charge(tariff, month)
+                        demchrg = get_demand_charge(tariff, month, year=year)
                         if (month >= 5) & (month <= 10):
                             mpeakchg = demchrg['mpeak']
                             ppeakchg = demchrg['ppeak']
                             maxchg = demchrg['max']
                             if isPDP:
-                                pdpcred = get_pdp_demand_credit(tariff, month)
+                                pdpcred = get_pdp_demand_credit(tariff, month, year=year)
                                 mpeakchg = mpeakchg - pdpcred['peak']
                             dchrg += mpeakchg * self._maxconpk[year, month]
                             # dcharges.append(mpeakchg * self._maxconpk[year, month])
