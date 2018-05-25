@@ -60,7 +60,7 @@ def matrices_frauke(ts=15):
     (A, B, C, D, dt) = cont2discrete((Act, Bct, Cct, Dct), ts*60, method='zoh')
     (A, E, C, D, dt) = cont2discrete((Act, Ect, Cct, Dct), ts*60, method='zoh')
     return A, B, E
-    
+
 def matrices_pavlak(ts=15):
     """
         Return matrices A, B, and E of the discrete-time dynamical system model
@@ -68,13 +68,13 @@ def matrices_pavlak(ts=15):
     """
     # define matrices for Pavlak's Building model
     # note: both input variables are assumed to be non-negative!
-    # R's in K/kW and C's in kJ/K				 	
+    # R's in K/kW and C's in kJ/K
     R1, R2 = 0.519956063919649, 0.00195669419889427
     R3, Rw = 0.00544245602566602, 0.156536600054259
     Cz, Cm = 215552.466637916, 8533970.42635405
-    
+
     den = R2*R3 + Rw*R2 + Rw*R3
-    
+
     Act = np.array([[Rw*R2/(R3*Cz*den) - 1/(R3*Cz), Rw/(Cz*den)],
                     [Rw/(Cm*den), -1/(R1*Cm)-1/(R2*Cm)+Rw*R3/(R2*Cm*den)]])
     Bct = np.array([[1/Cz, -1/Cz],
@@ -1131,11 +1131,16 @@ def _pdp_credits_2014():
               'E19TOU_transmission': {'Summer': {'peak': 6.29, 'ppeak': 1.39},
                                       'Winter': 0.0}
               }
-    pdpchg = {'A1TOU':  0.60,
-              'A6TOU':  1.20,
-              'A10TOU': 0.90,
-              'E19TOU': 1.20
-              }
+    pdpchg = {
+        'A1TOU':  0.60,
+        'A6TOU':  1.20,
+        'A10TOU_secondary': 0.90,
+        'A10TOU_primary': 0.90,
+        'A10TOU_transmission': 0.90,
+        'E19TOU_secondary': 1.20,
+        'E19TOU_primary': 1.20,
+        'E19TOU_transmission': 1.20,
+    }
     return pdpkwh, pdpdem, pdpchg
 
 def _pdp_credits_2013():
@@ -1199,11 +1204,16 @@ def _pdp_credits_2013():
               'E19TOU_transmission': {'Summer': {'peak': 5.63, 'ppeak': 1.25},
                                       'Winter': 0.0}
               }
-    pdpchg = {'A1TOU':  0.60,
-              'A6TOU':  1.20,
-              'A10TOU': 0.90,
-              'E19TOU': 1.20
-              }
+    pdpchg = {
+        'A1TOU':  0.60,
+        'A6TOU':  1.20,
+        'A10TOU_secondary': 0.90,
+        'A10TOU_primary': 0.90,
+        'A10TOU_transmission': 0.90,
+        'E19TOU_secondary': 1.20,
+        'E19TOU_primary': 1.20,
+        'E19TOU_transmission': 1.20,
+    }
     return pdpkwh, pdpdem, pdpchg
 
 
@@ -1268,11 +1278,16 @@ def _pdp_credits_2012():
               'E19TOU_transmission': {'Summer': {'peak': 5.54, 'ppeak': 1.23},
                                       'Winter': 0.0}
               }
-    pdpchg = {'A1TOU':  0.60,
-              'A6TOU':  1.20,
-              'A10TOU': 0.90,
-              'E19TOU': 1.20
-              }
+    pdpchg = {
+        'A1TOU':  0.60,
+        'A6TOU':  1.20,
+        'A10TOU_secondary': 0.90,
+        'A10TOU_primary': 0.90,
+        'A10TOU_transmission': 0.90,
+        'E19TOU_secondary': 1.20,
+        'E19TOU_primary': 1.20,
+        'E19TOU_transmission': 1.20,
+    }
     return pdpkwh, pdpdem, pdpchg
 
 
