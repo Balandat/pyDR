@@ -172,9 +172,12 @@ def _parse_nbt_data():
                      [datetime(2014, 11, 22), datetime(2014, 11, 28),
                       datetime(2014, 11, 27)] +
                      [datetime(year, 12, 25) for year in [2012, 2013, 2014]])
-    holiday_idx = [pd.DatetimeIndex(
-      start=day, end=day+pd.DateOffset(days=1) - pd.Timedelta(minutes=15),
-      tz='US/Pacific', freq='15Min') for day in NERC_holidays]
+    holiday_idx = [
+        pd.date_range(
+            start=day, end=day+pd.DateOffset(days=1) - pd.Timedelta(minutes=15),
+            tz='US/Pacific', freq='15Min')
+        for day in NERC_holidays
+    ]
     NERC_hd_ts = pd.DatetimeIndex.union_many(holiday_idx[0], holiday_idx[1:])
     NERC_hd_ts = NERC_hd_ts.sort_values().tz_convert('GMT')
     # load the values of the CAISO nbt from data file
@@ -188,11 +191,12 @@ def _parse_nbt_data():
         tsstart = start.tz_localize('US/Pacific').tz_convert('GMT')
         tsend = (end.tz_localize('US/Pacific').tz_convert('GMT') -
                  pd.Timedelta(minutes=15))
-        dfs.append(pd.DataFrame({'OnPeak': nbt.loc[start]['OnPeak'],
-                                 'OffPeak': nbt.loc[start]['OffPeak']},
-                                index=pd.DatetimeIndex(start=tsstart,
-                                                       end=tsend,
-                                                       freq='15Min')))
+        dfs.append(pd.DataFrame(
+            {
+                'OnPeak': nbt.loc[start]['OnPeak'],
+                'OffPeak': nbt.loc[start]['OffPeak']
+            },
+            index=pd.date_range(start=tsstart, end=tsend, freq='15Min')))
     nbt = pd.concat(dfs)
     # get indices which count as "OnPeak" as defined by CAISO
     locidx = nbt.index.tz_convert('US/Pacific')

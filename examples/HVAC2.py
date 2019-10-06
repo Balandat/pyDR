@@ -9,11 +9,11 @@ of Dynamic Electricity Pricing. In preparation.
 """
 
 # import packages and set up things
+import os
 import multiprocessing as mp
 import pandas as pd
 import logging
-# logutils package required as QueueHandler/Listener not available <3.2
-import logutils.queue
+import logging.handlers
 import logging.config
 from datetime import datetime
 from pyDR.simulation import get_internal_gains, log_config, simulate_HVAC, max_cool
@@ -21,18 +21,22 @@ from pyDR.simulation import get_internal_gains, log_config, simulate_HVAC, max_c
 ############################################################################
 # Setup
 
+DATA_PATH = "PATH_TO_PYDR_DATA"
+LOG_PATH = "PATH_TO_LOGS"
+RESULTS_PATH = "PATH_TO_RESULTS"
+
 # location of data files (available for download at
 # https://www.ocf.berkeley.edu/~balandat/pyDR_data.zip)
-data_file = 'PATH_TO_DATA/data_complete.csv'
+data_file = os.path.join(DATA_PATH, "data_complete.csv")
 
 # location of the log file
-log_file = 'PATH_TO_LOG/HVAC_sim.log'
+log_file = os.path.join(LOG_PATH, "HVAC_sim.log")
 
 # directory for GUROBI log files
-GRB_logdir = 'PATH_TO_LOG/GRB_logs/'
+GRB_logdir = os.path.join(LOG_PATH, "GRB_logs")
 
 # location of the result file
-result_file = 'PATH_TO_RESULTS/results.csv'
+result_file = os.path.join(RESULTS_PATH, "results.csv")
 
 # folder for output files (Attention: If not none then this will
 # save a few GB of .pickle files)
@@ -42,7 +46,7 @@ output_folder = None
 
 # read in data
 data = pd.read_csv(data_file, parse_dates=['timestamp_GMT'],
-                   index_col='timestamp_GMT').tz_localize('GMT')
+                   index_col='timestamp_GMT').tz_convert('GMT')
 data = data.resample('1H').mean()
 
 # Define model and simulation parameters
@@ -76,7 +80,7 @@ for (start_date, end_date) in sim_ranges:
 logging.config.dictConfig(log_config(log_file))
 log_queue = mp.Queue(-1)
 root = logging.getLogger()
-ql = logutils.queue.QueueListener(log_queue, *root.handlers)
+ql = logging.handlers.QueueListener(log_queue, *root.handlers)
 
 # start root logging via queue listener
 ql.start()

@@ -7,8 +7,6 @@ def read(fname):
         return f.read()
 
 reqs = ['numpy>=1.7.1', 'scipy>=0.12', 'pandas>=0.18', 'pytz', 'patsy>=0.4.1']
-# we need logutils for python<3.2
-reqs += ['logutils>=0.3.3']
 
 setup(
     name='pyDR',
