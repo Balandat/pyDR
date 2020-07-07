@@ -16,7 +16,7 @@ import logutils.queue
 from pyDR.dynamic_models import PavlaksModel, QuadraticUtilityWithBattery
 from .blopt import BLModel, compute_BLtaking_eq
 from .utils import (net_benefits_test, meter_charges, meter_charges_yearly, dem_charges_yearly,
-                    pdpdem_credit_yearly, non_gen_tariffs, pdp_compatible, get_energy_charges, create_folder)
+                    pdpdem_credit_yearly, non_gen_tariffs, pdp_compatible, get_energy_charges, create_folder, REF_TZ)
 
 
 def get_occupancy(index):
@@ -29,7 +29,7 @@ def get_occupancy(index):
         We also add additional "occupancy" by appliances and devices in the
         non-work hours.
     """
-    idx = index.tz_convert('US/Pacific')
+    idx = index.tz_convert(REF_TZ)
     occ = (90*((idx.hour >= 8) & (idx.hour < 18)) +
            60*((idx.hour >= 18) & (idx.hour < 20)) +
            20*((idx.hour >= 20) & (idx.hour < 8)))
@@ -43,7 +43,7 @@ def get_internal_gains(index):
         gain from occupants, lighting, and applicances.
 
     """
-    idx = index.tz_convert('US/Pacific')
+    idx = index.tz_convert(REF_TZ)
     wdy = [24.76192947, 20.96482158, 19.92731335, 19.92731335, 19.92731335,
            19.92731335, 38.64433293, 63.2454685, 82.73624661, 98.661203,
            100.9794973, 100.9794973, 99.7319698, 99.7319698, 100.9794973,
@@ -68,7 +68,7 @@ def get_comfort_constraints(index):
     """
         Function returning the comfort constraints for the HVAC model.
     """
-    idx = index.tz_convert('US/Pacific')
+    idx = index.tz_convert(REF_TZ)
     isWorkHour = (idx.hour >= 8) & (idx.hour < 20)
     x1max = 26 * isWorkHour + 30 * ~isWorkHour
     x1min = 21 * isWorkHour + 19 * ~isWorkHour

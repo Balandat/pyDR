@@ -17,6 +17,7 @@ import logging.handlers
 import logging.config
 from datetime import datetime
 from pyDR.simulation import get_internal_gains, log_config, simulate_HVAC, max_cool
+from pyDR.utils import REF_TZ
 
 ############################################################################
 # Setup
@@ -24,6 +25,7 @@ from pyDR.simulation import get_internal_gains, log_config, simulate_HVAC, max_c
 DATA_PATH = "PATH_TO_PYDR_DATA"
 LOG_PATH = "PATH_TO_LOGS"
 RESULTS_PATH = "PATH_TO_RESULTS"
+
 
 # location of data files (available for download at
 # https://www.ocf.berkeley.edu/~balandat/pyDR_data.zip)
@@ -38,8 +40,8 @@ GRB_logdir = os.path.join(LOG_PATH, "GRB_logs")
 # location of the result file
 result_file = os.path.join(RESULTS_PATH, "results.csv")
 
-# folder for output files (Attention: If not none then this will
-# save a few GB of .pickle files)
+# folder for output files
+# Attention: If not none then this will save a few GB of .pickle files
 output_folder = None
 
 ############################################################################
@@ -66,15 +68,16 @@ data_sim = pd.concat(
     [data[[node+'_temp']] for node in sim_nodes] +
     [data[[node+'_solar']] for node in sim_nodes] +
     [data[[node+'_LMP']] for node in sim_nodes] +
-    [get_internal_gains(data.index)], axis=1)
+    [get_internal_gains(data.index)], axis=1
+)
 # generate a list of DataFrames of different ranges for parallelization
-data_par = []
-for (start_date, end_date) in sim_ranges:
-    ts_start = pd.Timestamp(start_date, tz='US/Pacific')
-    ts_end = pd.Timestamp(end_date, tz='US/Pacific')
-    data_par.append(
-        data_sim[(data_sim.index >= ts_start) & (data_sim.index <= ts_end)]
-    )
+
+data_par = [
+    data_sim[
+        (data_sim.index >= pd.Timestamp(start_date, tz=REF_TZ)) & (data_sim.index <= pd.Timestamp(end_date, tz=REF_TZ))
+    ]
+    for (start_date, end_date) in sim_ranges
+]
 
 # configure logger
 logging.config.dictConfig(log_config(log_file))

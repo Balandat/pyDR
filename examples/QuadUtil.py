@@ -17,6 +17,7 @@ import logging.handlers
 import logging.config
 from datetime import datetime
 from pyDR.simulation import log_config, simulate_QU
+from pyDR.utils import REF_TZ
 
 
 ############################################################################
@@ -93,8 +94,8 @@ data_scaled = pd.concat(
 # generate a list of DataFrames of different ranges for parallelization
 data_par = []
 for (start_date, end_date) in sim_ranges:
-    ts_start = pd.Timestamp(start_date, tz='US/Pacific')
-    ts_end = pd.Timestamp(end_date, tz='US/Pacific')
+    ts_start = pd.Timestamp(start_date, tz=REF_TZ)
+    ts_end = pd.Timestamp(end_date, tz=REF_TZ)
     data_par.append(data_scaled[(data_scaled.index >= ts_start) &
                                 (data_scaled.index <= ts_end)])
 

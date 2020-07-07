@@ -22,6 +22,7 @@ carbon_costs = {2012: 16.60, 2013: 11.62, 2014: 11.62}
 # # if cost per metric ton is $38:
 # carbon_costs = {'2012': 15.77, '2013': 10.79, '2014': 10.79}
 
+REF_TZ = 'US/Pacific'
 
 def create_folder(filename):
     """
@@ -112,8 +113,8 @@ def extract_PGE_loadshape(filename, start_date=None, end_date=None, name=None):
     if end_date is not None:
         loadshapes = loadshapes[loadshapes.index <= end_date]
     # get DST transisiton times in US/Pacfic timezone
-    ttimes = pd.DatetimeIndex(timezone('US/Pacific')._utc_transition_times[1:],
-                              tz=timezone('UTC')).tz_convert('US/Pacific')
+    ttimes = pd.DatetimeIndex(timezone(REF_TZ)._utc_transition_times[1:],
+                              tz=timezone('UTC')).tz_convert(REF_TZ)
     ttimes = ttimes[(ttimes >= loadshapes.index[0]) &
                     (ttimes <= loadshapes.index[-1])]
     # fix inconsistencies b/c of DST changes
@@ -124,7 +125,7 @@ def extract_PGE_loadshape(filename, start_date=None, end_date=None, name=None):
     idx = pd.DatetimeIndex(
         start=loadshapes.index[0],
         end=loadshapes.index[-1] + pd.Timedelta(hours=23),
-        freq='H', tz=timezone('US/Pacific'))
+        freq='H', tz=timezone(REF_TZ))
     isswitch = pd.DatetimeIndex(idx.date).isin(ttimes.date)
     nsidx = idx[np.logical_not(isswitch)]
     loadSeries = pd.Series(
@@ -133,7 +134,7 @@ def extract_PGE_loadshape(filename, start_date=None, end_date=None, name=None):
     for day in switch_data.index:
         vals = switch_data.loc[day].values
         tsidx = pd.DatetimeIndex(start=day, end=day+pd.Timedelta(hours=23),
-                                 freq='1H', tz=timezone('US/Pacific'))
+                                 freq='1H', tz=timezone(REF_TZ))
         if (day.month > 0) & (day.month < 5):
             daydata = np.concatenate([vals[:2], vals[3:]])
         else:
@@ -145,7 +146,7 @@ def extract_PGE_loadshape(filename, start_date=None, end_date=None, name=None):
     return loadSeries
 
 
-def daily_occurrences(index, tz='US/Pacific'):
+def daily_occurrences(index, tz=REF_TZ):
     """
         Takes in a pandas DateTimeIndex and returns a pandas Series
         indexed by the days in index with the number of occurances of
@@ -175,7 +176,7 @@ def _parse_nbt_data():
     holiday_idx = [
         pd.date_range(
             start=day, end=day+pd.DateOffset(days=1) - pd.Timedelta(minutes=15),
-            tz='US/Pacific', freq='15Min')
+            tz=REF_TZ, freq='15Min')
         for day in NERC_holidays
     ]
     NERC_hd_ts = pd.DatetimeIndex.union_many(holiday_idx[0], holiday_idx[1:])
@@ -188,8 +189,8 @@ def _parse_nbt_data():
     dfs = []
     for start, end in zip(nbt.index,
                           nbt.index.shift(1, pd.DateOffset(months=1))):
-        tsstart = start.tz_localize('US/Pacific').tz_convert('GMT')
-        tsend = (end.tz_localize('US/Pacific').tz_convert('GMT') -
+        tsstart = start.tz_localize(REF_TZ).tz_convert('GMT')
+        tsend = (end.tz_localize(REF_TZ).tz_convert('GMT') -
                  pd.Timedelta(minutes=15))
         dfs.append(pd.DataFrame(
             {
@@ -199,7 +200,7 @@ def _parse_nbt_data():
             index=pd.date_range(start=tsstart, end=tsend, freq='15Min')))
     nbt = pd.concat(dfs)
     # get indices which count as "OnPeak" as defined by CAISO
-    locidx = nbt.index.tz_convert('US/Pacific')
+    locidx = nbt.index.tz_convert(REF_TZ)
     isNERCholiday = locidx.isin(NERC_hd_ts)
     isPeak = (~isNERCholiday & (locidx.dayofweek < 6) &
               (locidx.hour >= 7) & (locidx.hour < 22))
@@ -1396,7 +1397,7 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
         else:
             pdpcr = pdpkwh_credit[tariff]
             pdpchrg = pdp_charges[tariff]
-    idx = index.tz_convert('US/Pacific')
+    idx = index.tz_convert(REF_TZ)
     iswknd = idx.dayofweek > 5
     holidays = USFederalHolidayCalendar().holidays(idx.min(), idx.max())
     iswknd = iswknd | pd.DatetimeIndex(idx.date).isin(holidays)
@@ -1429,7 +1430,7 @@ def get_energy_charges(index, tariff, isRT=False, LMP=None,
     if isPDP:
         cidx = chronRates.index
         pdpind = ((cidx.hour >= 12) & (cidx.hour < 18) &
-                  (cidx.normalize().isin(pdp_days.tz_localize('US/Pacific'))))
+                  (cidx.normalize().isin(pdp_days.tz_localize(REF_TZ))))
         chronRates.loc[pdpind, 'EnergyCharge'] += pdpchrg
     chronRates = chronRates.tz_convert('GMT')
     if isRT:
@@ -1495,15 +1496,15 @@ def net_benefits_test(LMP, n='all', how='absolute', maxperday=24,
             idcs = criterion.nlargest(n).index
             return pd.Series(LMP.index.isin(idcs), index=LMP.index)
     else:
-        idcs = pd.DatetimeIndex([], tz='US/Pacific')
+        idcs = pd.DatetimeIndex([], tz=REF_TZ)
         if n == 'all':
-            for d, v in criterion.tz_convert('US/Pacific').groupby(
+            for d, v in criterion.tz_convert(REF_TZ).groupby(
                     pd.TimeGrouper('D')):
                 idcs.append(v.nlargest(maxperday).index)
         else:
             countdict = {}
             ncurr = 0
-            for ts, val in criterion.tz_convert('US/Pacific').sort_values(
+            for ts, val in criterion.tz_convert(REF_TZ).sort_values(
                     ascending=False).iteritems():
                 if ts.date() in countdict:
                     if countdict[ts.date()] == maxperday:

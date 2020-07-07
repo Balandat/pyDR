@@ -14,7 +14,7 @@ from datetime import datetime
 
 from .utils import (get_energy_charges, get_demand_charge, dem_charges, dem_charges_yearly,
                     get_pdp_demand_credit, get_DR_rewards, powerset, E19,
-                    carbon_costs)
+                    carbon_costs, REF_TZ)
 
 # define some string formatters
 psform = '%Y-%m-%d %H:%M'
@@ -60,7 +60,7 @@ class BLModel(object):
             Return total enery consumption charges (as determined by the
             tariff's energy charge) as a gurobipy LinExpr.
         """
-        locidx = self._index.tz_convert('US/Pacific')
+        locidx = self._index.tz_convert(REF_TZ)
         year = locidx[0].year
         if isRT and isPDP:
             raise Exception('Cannot combine RTP and PDP.')
@@ -138,18 +138,18 @@ class BLModel(object):
                 self._model.remove(maxconppkbnds)
             del self._maxconppkbnds
         self._model.update()
-        locidx = self._index.tz_convert('US/Pacific')
+        locidx = self._index.tz_convert(REF_TZ)
         ym_dict = {year: np.unique(locidx[locidx.year == year].month)
                    for year in np.unique(locidx.year)}
         indx = []
         for year, months in ym_dict.items():
             for month in months:
                 indx.append(pd.Timestamp(datetime(year, month, 1),
-                                         tz='US/Pacific'))
+                                         tz=REF_TZ))
         if tariff in dem_charges:
             if not(tariff in E19):
                 self._maxcon, self._maxconbnd = {}, {}
-                # locidx = self._index.tz_convert('US/Pacific')
+                # locidx = self._index.tz_convert(REF_TZ)
                 # print locidx
                 # the following creates a dictionary with all years in the data
                 # as keys, and for each year the value is an array of (unique)
@@ -164,7 +164,7 @@ class BLModel(object):
                         self._maxcon[year, month] = self._model.addVar(
                             vtype=GRB.CONTINUOUS,
                             name='maxcon[{},{}]'.format(year, month))
-                        # indx.append(pd.Timestamp(datetime(year,month,1),tz='US/Pacific'))
+                        # indx.append(pd.Timestamp(datetime(year,month,1),tz=REF_TZ))
                 self._model.update()
                 # now add in the necessary constraints and update objective
                 dcharges = []
@@ -190,7 +190,7 @@ class BLModel(object):
                 return dcharges
             else:
                 # for E19 tarrifs
-                idx_ = self._index.tz_convert('US/Pacific')
+                idx_ = self._index.tz_convert(REF_TZ)
                 iswknd = idx_.dayofweek > 5
                 holidays = USFederalHolidayCalendar().holidays(
                     idx_.min(), idx_.max())
@@ -210,7 +210,7 @@ class BLModel(object):
                 self._maxconpk, self._maxconpkbnd = {}, {}
                 self._maxconppk, self._maxconppkbnd = {}, {}
                 self._maxconppkw, self._maxconppkbndw = {}, {}
-                # locidx = self._index.tz_convert('US/Pacific')
+                # locidx = self._index.tz_convert(REF_TZ)
                 # ym_dict = {year: np.unique(locidx[locidx.year == year].month)
                 #            for year in np.unique(locidx.year)}
                 # indx=[]
@@ -230,7 +230,7 @@ class BLModel(object):
                             self._maxconpk[year, month] = self._model.addVar(
                                 vtype=GRB.CONTINUOUS,
                                 name='maxconpk[{},{}]'.format(year, month))
-                        # indx.append(pd.Timestamp(datetime(year,month,1),tz='US/Pacific'))
+                        # indx.append(pd.Timestamp(datetime(year,month,1),tz=REF_TZ))
                 self._model.update()  # update model
                 # now add in the necessary constraints and update objective
                 dcharges = []
@@ -325,7 +325,7 @@ class BLModel(object):
             dr_periods is a pandas DatetimeIndex.
         """
         # start by removing all variables (might be inefficient, but o/w it
-        # is a pain in the ass do deal with the multihour baselines etc.)
+        # is a pain in the ass to deal with the multihour baselines etc.)
         self._removeOld()
         # no work if no DR events are specified
         if (LMP is None) or (dr_periods is None):
@@ -352,10 +352,11 @@ class BLModel(object):
             LMP-G, i.e. the LMP minus the generation component of the tariff.
         """
         valid_periods = dr_periods[dr_periods.isin(self._index)].tz_convert(
-            'US/Pacific')
-        locidx = self._index.tz_convert('US/Pacific')
+            REF_TZ
+        )
+        locidx = self._index.tz_convert(REF_TZ)
         grouped = valid_periods.groupby(valid_periods.date)
-        # define auxiliary variables for each possible dr period if none exist
+        # define auxiliary variables for each possible DR period if none exist
         self._red, self._z, self._bl = {}, {}, {}
         self._redpos, self._redBL, self._red0, self._blcon = {}, {}, {}, {}
         self._dr_periods = valid_periods
@@ -377,7 +378,7 @@ class BLModel(object):
                     vtype=GRB.BINARY, name='z[{}]'.format(perstr))
                 self._bl[perstr] = self._model.addVar(
                     vtype=GRB.CONTINUOUS, name='bl[{}]'.format(perstr))
-        self._model.update()  # this must be done before defining constaints
+        self._model.update()  # this must be done before defining constants
         # determine "bigM" value from the bounds on the control variables
         M = np.sum(np.asarray(self._dynsys._opts['nrg_coeffs']) *
                    (self._dynsys._opts['umax'] - self._dynsys._opts['umin']),
@@ -389,7 +390,7 @@ class BLModel(object):
         # perform some preparations for the constraints
         # drcomp = 0.0
         nrgcons = self._dynsys.get_consumption()['energy']
-        lmps = LMP.tz_convert('US/Pacific').loc[locidx] / 1000  # to $/kWh
+        lmps = LMP.tz_convert(REF_TZ).loc[locidx] / 1000  # to $/kWh
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
         isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
@@ -515,9 +516,9 @@ class BLModel(object):
         else:
             alpha_nb = 0.25  # non-business day
         valid_periods = dr_periods[dr_periods.isin(self._index)]
-        locidx = self._index.tz_convert('US/Pacific')
+        locidx = self._index.tz_convert(REF_TZ)
         grouped = valid_periods.groupby(
-            valid_periods.tz_convert('US/Pacific').date)
+            valid_periods.tz_convert(REF_TZ).date)
         # define auxiliary variables for each possible dr period if none exist
         self._red, self._z, self._bl = {}, {}, {}
         self._redpos, self._redBL, self._red0, self._blcon = {}, {}, {}, {}
@@ -555,7 +556,7 @@ class BLModel(object):
         # perform some preparations for the constraints
         drcomp_ = []
         nrgcons = self._dynsys.get_consumption()['energy']
-        lmps = LMP.tz_convert('US/Pacific').loc[locidx] / 1000  # to $/kWh
+        lmps = LMP.tz_convert(REF_TZ).loc[locidx] / 1000  # to $/kWh
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
         isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
@@ -582,7 +583,7 @@ class BLModel(object):
         for cons, alpha in zip([nrgcons[isBusiness], nrgcons[~isBusiness]],
                                [alpha_b, alpha_nb]):
             # localize consumption index
-            considxloc = cons.index.tz_convert('US/Pacific')
+            considxloc = cons.index.tz_convert(REF_TZ)
             # compute BLs for each hour separately
             con_hrly = {hour: cons[considxloc.hour == hour].sort_index()
                         for hour in range(24)}
@@ -602,7 +603,7 @@ class BLModel(object):
                     # we have to do some work ...
                     if period in valid_periods:
                         # need to use zday if this day has multiple DR events
-                        dt = period.tz_convert('US/Pacific').date()
+                        dt = period.tz_convert(REF_TZ).date()
                         if len(grouped[dt]) > 1:
                             z = self._zday[dt.strftime(dsform)]
                         else:
@@ -630,7 +631,7 @@ class BLModel(object):
                             name='red0[{}]'.format(perstr))
                         # add DR compensation to objective
                         drcomp_.append(
-                            (lmps.loc[period.tz_convert('US/Pacific')] *
+                            (lmps.loc[period.tz_convert(REF_TZ)] *
                              self._red[perstr]))
                     # ... otherwise this is pretty straightforward
                     else:
@@ -659,8 +660,8 @@ class BLModel(object):
 
         self._removeOld()
         self._blvals = bl_values[
-            bl_values.index.isin(self._index)].tz_convert('US/Pacific')
-        locidx = self._index.tz_convert('US/Pacific')
+            bl_values.index.isin(self._index)].tz_convert(REF_TZ)
+        locidx = self._index.tz_convert(REF_TZ)
         self._grouped = self._blvals.index.groupby(self._blvals.index.date)
         # define dictionaries to store variables in
         self._red, self._z = {}, {}
@@ -688,7 +689,7 @@ class BLModel(object):
         DR_rewards = get_DR_rewards(LMP, isLMPmG=kwargs.get('isLMPmG'),
                                     tariff=kwargs.get('tariff'))
         # Pick out relevant dates and congvert to $/kWh
-        DR_rewards = DR_rewards.tz_convert('US/Pacific').loc[locidx] / 1000
+        DR_rewards = DR_rewards.tz_convert(REF_TZ).loc[locidx] / 1000
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
         isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
@@ -740,17 +741,17 @@ class BLModel(object):
             regard the associated days as "event days" (in addition to
             weekend days and holidays).
         """
-        locidx = self._index.tz_convert('US/Pacific')
+        locidx = self._index.tz_convert(REF_TZ)
         cons = self._dynsys.get_consumption()['energy'].tz_convert(
-            'US/Pacific')
+            REF_TZ)
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
         isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
         isBusiness = pd.Series(isBusiness, index=locidx)
         if red_times is not None:
             isEventDay = locidx.normalize().isin(red_times.tz_convert(
-                'US/Pacific').normalize())
-        blidx, blvals = bl_periods.tz_convert('US/Pacific'), []
+                REF_TZ).normalize())
+        blidx, blvals = bl_periods.tz_convert(REF_TZ), []
         for period in blidx:
             per_select = ((locidx < period) &
                           (locidx.hour == period.hour) &
@@ -776,9 +777,9 @@ class BLModel(object):
             If red_times is a Datetimeindex, regard the associated days as
             "event days" (in addition to weekend days and holidays).
         """
-        locidx = self._index.tz_convert('US/Pacific')
+        locidx = self._index.tz_convert(REF_TZ)
         cons = self._dynsys.get_consumption()['energy'].tz_convert(
-            'US/Pacific')
+            REF_TZ)
         cons = pd.Series([c.getValue() for c in cons],
                          index=cons.index)
         holidays = USFederalHolidayCalendar().holidays(
@@ -895,7 +896,7 @@ class BLModel(object):
         lmps = LMP.loc[self._index] / 1000  # select and convert price to $/kWh
         if carbon:
             lmps += pd.Series(carbon_costs).loc[self._index.tz_convert(
-                'US/Pacific').year].values / 1000.0
+                REF_TZ).year].values / 1000.0
         cons = self._dynsys.get_consumption()['energy']
         return quicksum([lmp * con for lmp, con in
                          zip(lmps.values, cons.values)])
@@ -920,7 +921,7 @@ class BLModel(object):
                 perstrs.append(perstr)
                 vals.append(bool(z.X))
             dtidx = pd.to_datetime(perstrs, format=psform).tz_localize(
-                'US/Pacific').tz_convert('GMT')
+                REF_TZ).tz_convert('GMT')
             dfs.append(pd.DataFrame({'z': vals}, index=dtidx))
         if hasattr(self, '_red'):
             perstrs, vals = [], []
@@ -928,7 +929,7 @@ class BLModel(object):
                 perstrs.append(perstr)
                 vals.append(red.X)
             dtidx = pd.to_datetime(perstrs, format=psform).tz_localize(
-                'US/Pacific').tz_convert('GMT')
+                REF_TZ).tz_convert('GMT')
             dfs.append(pd.DataFrame({'red': vals}, index=dtidx))
         if hasattr(self, '_bl'):
             perstrs, vals = [], []
@@ -936,7 +937,7 @@ class BLModel(object):
                 perstrs.append(perstr)
                 vals.append(bl.X)
             dtidx = pd.to_datetime(perstrs, format=psform).tz_localize(
-                'US/Pacific').tz_convert('GMT')
+                REF_TZ).tz_convert('GMT')
             dfs.append(pd.DataFrame({'BL': vals}, index=dtidx))
         return pd.concat(dfs, axis=1)
 
