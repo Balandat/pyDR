@@ -378,7 +378,7 @@ class BLModel(object):
                     vtype=GRB.BINARY, name='z[{}]'.format(perstr))
                 self._bl[perstr] = self._model.addVar(
                     vtype=GRB.CONTINUOUS, name='bl[{}]'.format(perstr))
-        self._model.update()  # this must be done before defining constants
+        self._model.update()  # this must be done before defining constraints
         # determine "bigM" value from the bounds on the control variables
         M = np.sum(np.asarray(self._dynsys._opts['nrg_coeffs']) *
                    (self._dynsys._opts['umax'] - self._dynsys._opts['umin']),
@@ -393,8 +393,8 @@ class BLModel(object):
         lmps = LMP.tz_convert(REF_TZ).loc[locidx] / 1000  # to $/kWh
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
-        isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
-        isBusiness = pd.Series(isBusiness, index=locidx)
+        is_business_idx = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
+        is_business = pd.Series(is_business_idx, index=locidx)
         # add constraints on varible zday (if multiple periods per day)
         for day, periods in grouped.iteritems():
             daystr = day.strftime(dsform)
@@ -423,12 +423,12 @@ class BLModel(object):
                 per_select = ((locidx < period) &
                               (locidx.hour == period.hour) &
                               (locidx.minute == period.minute))
-                if isBusiness.loc[period]:
+                if is_business.loc[period]:
                     nmax = 10
-                    per_select = per_select & isBusiness.values
+                    per_select = per_select & is_business.values
                 else:
                     nmax = 4
-                    per_select = per_select & (~isBusiness.values)
+                    per_select = per_select & (~is_business.values)
                 similars = locidx[per_select].sort_values(ascending=False)
                 # now go through similar days sucessively
                 sim_nonDR, sim_DR, sim_DR_mult = [], [], []
@@ -559,8 +559,8 @@ class BLModel(object):
         lmps = LMP.tz_convert(REF_TZ).loc[locidx] / 1000  # to $/kWh
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
-        isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
-        isBusiness = pd.Series(isBusiness, index=locidx)
+        is_business_idx = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
+        is_business = pd.Series(is_business_idx, index=locidx)
         # add constraints on varible zday (if multiple periods per day)
         for day, periods in grouped.iteritems():
             daystr = day.strftime(dsform)
@@ -580,7 +580,7 @@ class BLModel(object):
         self._model.update()
         # now add the constraints that define the baseline as well as a
         # bunch of other stuff
-        for cons, alpha in zip([nrgcons[isBusiness], nrgcons[~isBusiness]],
+        for cons, alpha in zip([nrgcons[is_business], nrgcons[~is_business]],
                                [alpha_b, alpha_nb]):
             # localize consumption index
             considxloc = cons.index.tz_convert(REF_TZ)
@@ -692,8 +692,8 @@ class BLModel(object):
         DR_rewards = DR_rewards.tz_convert(REF_TZ).loc[locidx] / 1000
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
-        isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
-        isBusiness = pd.Series(isBusiness, index=locidx)
+        is_business_idx = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
+        is_business = pd.Series(is_business_idx, index=locidx)
         # formulate constaints and add terms to objective
         for i, day in enumerate(self._grouped):
             periods = self._grouped[day]
@@ -746,8 +746,8 @@ class BLModel(object):
             REF_TZ)
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
-        isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
-        isBusiness = pd.Series(isBusiness, index=locidx)
+        is_business_idx = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
+        is_business = pd.Series(is_business_idx, index=locidx)
         if red_times is not None:
             isEventDay = locidx.normalize().isin(red_times.tz_convert(
                 REF_TZ).normalize())
@@ -756,12 +756,12 @@ class BLModel(object):
             per_select = ((locidx < period) &
                           (locidx.hour == period.hour) &
                           (locidx.minute == period.minute))
-            if isBusiness.loc[period]:
+            if is_business.loc[period]:
                 nmax = 10
-                per_select = per_select & isBusiness.values
+                per_select = per_select & is_business.values
             else:
                 nmax = 4
-                per_select = per_select & (~isBusiness.values)
+                per_select = per_select & (~is_business.values)
             if red_times is not None:
                 per_select = per_select & (~isEventDay)
             similars = locidx[per_select].sort_values(ascending=False)[:nmax]
@@ -784,10 +784,10 @@ class BLModel(object):
                          index=cons.index)
         holidays = USFederalHolidayCalendar().holidays(
             start=locidx.min(), end=locidx.max())
-        isBusiness = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
-        isBusiness = pd.Series(isBusiness, index=locidx)
+        is_business_idx = (locidx.dayofweek < 5) & (~locidx.isin(holidays))
+        is_business = pd.Series(is_business_idx, index=locidx)
         bls = []
-        for con, alpha in zip([cons[isBusiness], cons[~isBusiness]],
+        for con, alpha in zip([cons[is_business], cons[~is_business]],
                               [alpha_b, alpha_nb]):
             # determine intitial values for the BL from non-DR data
             if red_times is not None:
